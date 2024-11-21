@@ -11,7 +11,8 @@
  * If you use this software in your research, we request that you reference
  * the zsim paper ("ZSim: Fast and Accurate Microarchitectural Simulation of
  * Thousand-Core Systems", Sanchez and Kozyrakis, ISCA-40, June 2013) as the
- * source of the simulator in any publications that use this software, and that
+ * source of the simula
+ *tor in any publications that use this software, and that
  * you send us a citation of your work.
  *
  * zsim is distributed in the hope that it will be useful, but WITHOUT ANY

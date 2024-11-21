@@ -8,6 +8,7 @@
  * terms of the GNU General Public License as published by the Free Software
  * Foundation, version 2.
  *
+ *
  * If you use this software in your research, we request that you reference
  * the zsim paper ("ZSim: Fast and Accurate Microarchitectural Simulation of
  * Thousand-Core Systems", Sanchez and Kozyrakis, ISCA-40, June 2013) as the

@@ -114,6 +114,13 @@ static uint32_t cids[MAX_THREADS];
 // Per TID core pointers (TODO: phase out cid/tid state --- this is enough)
 Core* cores[MAX_THREADS];
 
+bool isCoup[MAX_THREADS];
+
+static inline void initCoup() {
+    for(unsigned i = 0; i < MAX_THREADS; i++)
+        isCoup[i] = false;
+}
+
 static inline void clearCid(uint32_t tid) {
     assert(tid < MAX_THREADS);
     assert(cids[tid] != INVALID_CID);
@@ -168,7 +175,9 @@ VOID FFThread(VOID* arg);
 InstrFuncPtrs fPtrs[MAX_THREADS] ATTR_LINE_ALIGNED; //minimize false sharing
 
 VOID PIN_FAST_ANALYSIS_CALL IndirectLoadSingle(THREADID tid, ADDRINT addr) {
+    if(isCoup[tid]) info("Address loaded 0x%lx\n", addr);
     fPtrs[tid].loadPtr(tid, addr);
+    isCoup[tid] = false;
 }
 
 VOID PIN_FAST_ANALYSIS_CALL IndirectStoreSingle(THREADID tid, ADDRINT addr) {
@@ -1199,6 +1208,8 @@ VOID HandleMagicOp(THREADID tid, ADDRINT op) {
         case 1031:
         case 1032:
         case 1033:
+            info("Thread %d: issued %ld\n", tid, op);
+            isCoup[tid] = true;
             return;
         default:
             panic("Thread %d issued unknown magic op %ld!", tid, op);
