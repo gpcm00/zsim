@@ -15,9 +15,9 @@ void coup_add(int *addr, int val) {
     __asm__ __volatile__(
         " lock       ;\n"
         " addl %1, %0;\n"
-        : "=m" (*addr)          // Output
-        : "ir" (val), "m" (*addr) // Inputs
-        : "memory"                // Clobber memory to avoid reordering
+        : "=m"(*addr)          
+        : "ir"(val), "m"(*addr) 
+        : "memory"
     );
 }
 
