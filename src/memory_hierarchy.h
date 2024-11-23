@@ -78,8 +78,8 @@ const char* AccessTypeName(AccessType t);
 const char* InvTypeName(InvType t);
 const char* MESIStateName(MESIState s);
 
-inline bool IsGet(AccessType t) { return t == GETS || t == GETX; }
-inline bool IsPut(AccessType t) { return t == PUTS || t == PUTX; }
+inline bool IsGet(AccessType t) { return t == GETS || t == GETX || t == GETU; }
+inline bool IsPut(AccessType t) { return t == PUTS || t == PUTX || t == PUTU; }
 
 
 /* Memory request */
