@@ -114,13 +114,6 @@ static uint32_t cids[MAX_THREADS];
 // Per TID core pointers (TODO: phase out cid/tid state --- this is enough)
 Core* cores[MAX_THREADS];
 
-bool isCoup[MAX_THREADS];
-
-static inline void initCoup() {
-    for(unsigned i = 0; i < MAX_THREADS; i++)
-        isCoup[i] = false;
-}
-
 static inline void clearCid(uint32_t tid) {
     assert(tid < MAX_THREADS);
     assert(cids[tid] != INVALID_CID);
@@ -173,6 +166,12 @@ VOID FFThread(VOID* arg);
  */
 
 InstrFuncPtrs fPtrs[MAX_THREADS] ATTR_LINE_ALIGNED; //minimize false sharing
+
+bool isCoup[MAX_THREADS];
+static inline void initCoup() {
+    for(unsigned i = 0; i < MAX_THREADS; i++)
+        isCoup[i] = false;
+}
 
 VOID PIN_FAST_ANALYSIS_CALL IndirectLoadSingle(THREADID tid, ADDRINT addr) {
     if(isCoup[tid]) info("Address loaded 0x%lx\n", addr);
@@ -1453,6 +1452,8 @@ int main(int argc, char *argv[]) {
     std::stringstream logfile_ss;
     logfile_ss << KnobOutputDir.Value() << "/zsim.log." << procIdx;
     InitLog(header, KnobLogToFile.Value()? logfile_ss.str().c_str() : nullptr);
+
+    initCoup();
 
     //If parent dies, kill us
     //This avoids leaving strays running in any circumstances, but may be too heavy-handed with arbitrary process hierarchies.

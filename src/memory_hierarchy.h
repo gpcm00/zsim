@@ -45,7 +45,11 @@ typedef enum {
     GETS, // get line, exclusive permission not needed (triggered by a processor load)
     GETX, // get line, exclusive permission needed (triggered by a processor store o atomic access)
     PUTS, // clean writeback (lower cache is evicting this line, line was not modified)
-    PUTX  // dirty writeback (lower cache is evicting this line, line was modified)
+    PUTX, // dirty writeback (lower cache is evicting this line, line was modified)
+
+    // -- !! modified !! --
+    GETU, // get line, update permission
+    PUTU, // 
 } AccessType;
 
 /* Types of Invalidation. An Invalidation is a request issued from upper to lower
@@ -62,7 +66,11 @@ typedef enum {
     I, // invalid
     S, // shared (and clean)
     E, // exclusive and clean
-    M  // exclusive and dirty
+    M, // exclusive and dirty
+
+    // -- !! modified !! --
+    U, // update only
+
 } MESIState;
 
 //Convenience methods for clearer debug traces
