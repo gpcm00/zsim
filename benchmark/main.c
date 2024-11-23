@@ -66,10 +66,12 @@ int main(int argc, char** argv) {
 
     zsim_roi_end();
 
-    free(thrd);
 
     printf("Threads joined\n");
     printf("Counter = %d\n", counter);
+
+    free(thrd);
+
 
     return 0;
 }

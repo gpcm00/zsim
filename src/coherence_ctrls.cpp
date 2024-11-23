@@ -102,6 +102,7 @@ uint64_t MESIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessTy
             }
             profPUTX.inc();
             break;
+        case GETU:
         case GETS:
             if (*state == I) {
                 uint32_t parentId = getParentId(lineAddr);
@@ -279,6 +280,7 @@ uint64_t MESITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType 
             e->numSharers--;
             *childState = I;
             break;
+        case GETU:
         case GETS:
             if (e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL)) {
                 //Give in E state

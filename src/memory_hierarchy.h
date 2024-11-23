@@ -48,8 +48,8 @@ typedef enum {
     PUTX, // dirty writeback (lower cache is evicting this line, line was modified)
 
     // -- !! modified !! --
-    GETU, // get line, update permission
-    PUTU, // 
+    GETU, // get line, update permission needed (triggered by a commutative load)
+    PUTU, // update writeback (lower cache is evicting this line, update value)
 } AccessType;
 
 /* Types of Invalidation. An Invalidation is a request issued from upper to lower
@@ -69,7 +69,7 @@ typedef enum {
     M, // exclusive and dirty
 
     // -- !! modified !! --
-    U, // update only
+    U, // update
 
 } MESIState;
 

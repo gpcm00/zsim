@@ -62,6 +62,9 @@
 #include "trace_driver.h"
 #include "virt/virt.h"
 
+
+#define __safe_coup_state_change(s, t)      if(cores[t] != nullptr) cores[t]->coup_ld(s)
+
 //#include <signal.h> //can't include this, conflicts with PIN's
 
 /* Command-line switches (used to pass info from harness that cannot be passed through the config file, most config is file-based) */
@@ -177,6 +180,7 @@ VOID PIN_FAST_ANALYSIS_CALL IndirectLoadSingle(THREADID tid, ADDRINT addr) {
     if(isCoup[tid]) info("Address loaded 0x%lx\n", addr);
     fPtrs[tid].loadPtr(tid, addr);
     isCoup[tid] = false;
+    if(cores[tid] != nullptr) cores[tid]->coup_ld(false);
 }
 
 VOID PIN_FAST_ANALYSIS_CALL IndirectStoreSingle(THREADID tid, ADDRINT addr) {
@@ -1209,6 +1213,7 @@ VOID HandleMagicOp(THREADID tid, ADDRINT op) {
         case 1033:
             info("Thread %d: issued %ld\n", tid, op);
             isCoup[tid] = true;
+            if(cores[tid] != nullptr) cores[tid]->coup_ld(true);
             return;
         default:
             panic("Thread %d issued unknown magic op %ld!", tid, op);

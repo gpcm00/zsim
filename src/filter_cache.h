@@ -61,6 +61,8 @@ class FilterCache : public Cache {
         lock_t filterLock;
         uint64_t fGETSHit, fGETXHit;
 
+        bool coup;
+
     public:
         FilterCache(uint32_t _numSets, uint32_t _numLines, CC* _cc, CacheArray* _array,
                 ReplPolicy* _rp, uint32_t _accLat, uint32_t _invLat, g_string& _name)
@@ -74,6 +76,7 @@ class FilterCache : public Cache {
             fGETSHit = fGETXHit = 0;
             srcId = -1;
             reqFlags = 0;
+            coup = false;
         }
 
         void setSourceId(uint32_t id) {
@@ -83,6 +86,8 @@ class FilterCache : public Cache {
         void setFlags(uint32_t flags) {
             reqFlags = flags;
         }
+
+        void setCoup(bool flag) { coup = flag; }
 
         void initStats(AggregateStat* parentStat) {
             AggregateStat* cacheStat = new AggregateStat();
@@ -129,7 +134,8 @@ class FilterCache : public Cache {
             Address pLineAddr = procMask | vLineAddr;
             MESIState dummyState = MESIState::I;
             futex_lock(&filterLock);
-            MemReq req = {pLineAddr, isLoad? GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, reqFlags};
+            if(coup) info("coup replace\n");
+            MemReq req = {pLineAddr, isLoad? coup? GETU : GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, reqFlags};
             uint64_t respCycle  = access(req);
 
             //Due to the way we do the locking, at this point the old address might be invalidated, but we have the new address guaranteed until we release the lock

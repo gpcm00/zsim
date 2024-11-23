@@ -67,11 +67,14 @@ class Core : public GlobAlloc {
         uint64_t lastUpdateCycles;
         uint64_t lastUpdateInstrs;
 
+        
+
     protected:
         g_string name;
+        bool coup;
 
     public:
-        explicit Core(g_string& _name) : lastUpdateCycles(0), lastUpdateInstrs(0), name(_name) {}
+        explicit Core(g_string& _name) : lastUpdateCycles(0), lastUpdateInstrs(0), name(_name) { coup = false; }
 
         virtual uint64_t getInstrs() const = 0; // typically used to find out termination conditions or dumps
         virtual uint64_t getPhaseCycles() const = 0; // used by RDTSC faking --- we need to know how far along we are in the phase, but not the total number of phases
@@ -85,6 +88,8 @@ class Core : public GlobAlloc {
         virtual void join() {}
 
         virtual InstrFuncPtrs GetFuncPtrs() = 0;
+
+        void coup_ld(bool state) { coup = state; if(coup) info("coup load: %d\n", coup); }
 };
 
 #endif  // CORE_H_

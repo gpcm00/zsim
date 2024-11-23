@@ -305,7 +305,7 @@ class MESICC : public CC {
 
         //Access methods
         bool startAccess(MemReq& req) {
-            assert((req.type == GETS) || (req.type == GETX) || (req.type == PUTS) || (req.type == PUTX));
+            assert((req.type == GETS) || (req.type == GETX) || (req.type == PUTS) || (req.type == PUTX) || (req.type == GETU));
 
             /* Child should be locked when called. We do hand-over-hand locking when going
              * down (which is why we require the lock), but not when going up, opening the
@@ -326,7 +326,7 @@ class MESICC : public CC {
         }
 
         bool shouldAllocate(const MemReq& req) {
-            if ((req.type == GETS) || (req.type == GETX)) {
+            if ((req.type == GETU) || (req.type == GETS) || (req.type == GETX)) {
                 return true;
             } else {
                 assert((req.type == PUTS) || (req.type == PUTX));
@@ -359,7 +359,7 @@ class MESICC : public CC {
             } else {
                 //Prefetches are side requests and get handled a bit differently
                 bool isPrefetch = req.flags & MemReq::PREFETCH;
-                assert(!isPrefetch || req.type == GETS);
+                assert(!isPrefetch || req.type == GETS || req.type == GETU);
                 uint32_t flags = req.flags & ~MemReq::PREFETCH; //always clear PREFETCH, this flag cannot propagate up
 
                 //if needed, fetch line or upgrade miss from upper level
@@ -434,7 +434,7 @@ class MESITerminalCC : public CC {
 
         //Access methods
         bool startAccess(MemReq& req) {
-            assert((req.type == GETS) || (req.type == GETX)); //no puts!
+            assert((req.type == GETS) || (req.type == GETX) || req.type == GETU); //no puts!
 
             /* Child should be locked when called. We do hand-over-hand locking when going
              * down (which is why we require the lock), but not when going up, opening the
