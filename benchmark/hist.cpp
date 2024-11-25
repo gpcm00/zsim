@@ -18,7 +18,7 @@ void histogramBuckets(const std::vector<int>& numbers, std::map<int, int>& histo
 void generateRandomNumbers(std::vector<int>& numbers, int numElements) { 
     
     std::mt19937 gen(12345); // using a seed so we can see the same results
-    std::uniform_int_distribution<> dist(0, 1000); 
+    std::uniform_int_distribution<int> dist(0, 1000); 
     for (int i = 0; i < numElements; ++i) { 
         numbers.push_back(dist(gen)); 
     } 
@@ -40,6 +40,7 @@ int main(int argc, char** argv){
 
     std::vector<std::thread> threads;
     int chunkSize = numElements / nthreads;
+    zsim_roi_begin();
 
     for (int i = 0; i < nthreads; ++i) { 
         int start = i * chunkSize; 
@@ -55,6 +56,8 @@ int main(int argc, char** argv){
     for (auto& th : threads) { 
         th.join();
     }
+
+    zsim_roi_end();
 
     for (const auto& pair : histogram) { 
         std::cout << "Value: " << pair.first << " Count: " << pair.second << std::endl; 
