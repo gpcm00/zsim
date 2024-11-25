@@ -137,6 +137,10 @@ class FilterCache : public Cache {
             if(coup) info("coup replace\n");
             MemReq req = {pLineAddr, isLoad? coup? GETU : GETS : GETX, 0, &dummyState, curCycle, &filterLock, dummyState, srcId, reqFlags};
             uint64_t respCycle  = access(req);
+            if(coup) info("req.type = %d\n", req.type);
+            
+
+            coup = false;
 
             //Due to the way we do the locking, at this point the old address might be invalidated, but we have the new address guaranteed until we release the lock
 
