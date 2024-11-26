@@ -149,7 +149,7 @@ uint64_t MEUSIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessT
 
 void MEUSIBottomCC::processWritebackOnAccess(Address lineAddr, uint32_t lineId, AccessType type) {
     MESIState* state = &array[lineId];
-    assert(*state == M || *state == E);
+    assert(*state == M || *state == E || *state == U);
     if (*state == E) {
         //Silent transition to M if in E
         *state = M;
@@ -169,7 +169,7 @@ void MEUSIBottomCC::processInval(Address lineAddr, uint32_t lineId, InvType type
             break;
         case INV: //invalidate
             assert(*state != I);
-            if (*state == M) *reqWriteback = true;
+            if (*state == M || *state == U) *reqWriteback = true;
             *state = I;
             profINV.inc();
             break;
@@ -180,4 +180,14 @@ void MEUSIBottomCC::processInval(Address lineAddr, uint32_t lineId, InvType type
         default: panic("!?");
     }
     //NOTE: BottomCC never calls up on an invalidate, so it adds no extra latency
+}
+
+/* I still don't know if this will ever get called (MESICC::processAccess) */
+uint64_t MEUSIBottomCC::processNonInclusiveWriteback(Address lineAddr, AccessType type, uint64_t cycle, MESIState* state, uint32_t srcId, uint32_t flags) {
+    if (!nonInclusiveHack) panic("Non-inclusive %s on line 0x%lx, this cache should be inclusive", AccessTypeName(type), lineAddr);
+
+    //info("Non-inclusive wback, forwarding");
+    MemReq req = {lineAddr, type, selfId, state, cycle, &ccLock, *state, srcId, flags | MemReq::NONINCLWB};
+    uint64_t respCycle = parents[getParentId(lineAddr)]->access(req);
+    return respCycle;
 }
