@@ -11,13 +11,13 @@ extern "C" {
 #define ACC_OR  1031
 #define ACC_XOR 1032
 
-void coup_add(int *addr, int val) {
+void coup_add(int *addr, int val, unsigned coup_op) {
     // just an atomic add in assembly
     __asm__ __volatile__(
-        " lock       ;\n"
-        " addl %1, %0;\n"
+         " xchg %%rcx, %%rcx ;\n"
+         " lock addl %0, %1  ;\n"
         : "=m"(*addr)          
-        : "ir"(val), "m"(*addr) 
+        : "ir"(val), "m"(*addr) , "c"(coup_op)
         : "memory"
     );
 }

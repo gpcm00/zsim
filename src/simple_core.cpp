@@ -49,9 +49,8 @@ uint64_t SimpleCore::getPhaseCycles() const {
 
 void SimpleCore::load(Address addr) {
     l1d->setCoup(coup);
-    if(coup) info("loading coup\n");
     curCycle = l1d->load(addr, curCycle);
-    coup_ld(false);
+    coup_op(false);
 }
 
 void SimpleCore::store(Address addr) {

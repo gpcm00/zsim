@@ -78,7 +78,7 @@ uint64_t Cache::access(MemReq& req) {
             cc->processEviction(req, wbLineAddr, lineId, respCycle); //1. if needed, send invalidates/downgrades to lower level
 
             array->postinsert(req.lineAddr, &req, lineId); //do the actual insertion. NOTE: Now we must split insert into a 2-phase thing because cc unlocks us.
-            if(req.type == GETU) info("Gotcha!")
+            
         }
         // Enforce single-record invariant: Writeback access may have a timing
         // record. If so, read it.
@@ -91,7 +91,6 @@ uint64_t Cache::access(MemReq& req) {
 
         respCycle = cc->processAccess(req, lineId, respCycle);
 
-        if(req.type == GETU) info("Still Gotcha!")
 
         // Access may have generated another timing record. If *both* access
         // and wb have records, stitch them together

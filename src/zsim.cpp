@@ -63,7 +63,7 @@
 #include "virt/virt.h"
 
 
-#define __safe_coup_state_change(s, t)      if(cores[t] != nullptr) cores[t]->coup_ld(s)
+#define __safe_coup_state_change(s, t)      if(cores[t] != nullptr) cores[t]->coup_op(s)
 
 //#include <signal.h> //can't include this, conflicts with PIN's
 
@@ -177,10 +177,10 @@ static inline void initCoup() {
 }
 
 VOID PIN_FAST_ANALYSIS_CALL IndirectLoadSingle(THREADID tid, ADDRINT addr) {
-    if(isCoup[tid]) info("Address loaded 0x%lx\n", addr);
+    if(isCoup[tid]) info("accessing coup load");
     fPtrs[tid].loadPtr(tid, addr);
     isCoup[tid] = false;
-    if(cores[tid] != nullptr) cores[tid]->coup_ld(false);
+    if(cores[tid] != nullptr) cores[tid]->coup_op(false);
 }
 
 VOID PIN_FAST_ANALYSIS_CALL IndirectStoreSingle(THREADID tid, ADDRINT addr) {
@@ -188,6 +188,7 @@ VOID PIN_FAST_ANALYSIS_CALL IndirectStoreSingle(THREADID tid, ADDRINT addr) {
 }
 
 VOID PIN_FAST_ANALYSIS_CALL IndirectBasicBlock(THREADID tid, ADDRINT bblAddr, BblInfo* bblInfo) {
+   
     fPtrs[tid].bblPtr(tid, bblAddr, bblInfo);
 }
 
@@ -553,28 +554,39 @@ VOID Instruction(INS ins) {
         AFUNPTR PredLoadFuncPtr = (AFUNPTR) IndirectPredLoadSingle;
         AFUNPTR PredStoreFuncPtr = (AFUNPTR) IndirectPredStoreSingle;
 
-        if (INS_IsMemoryRead(ins)) {
-            if (!INS_IsPredicated(ins)) {
-                INS_InsertCall(ins, IPOINT_BEFORE, LoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD_EA, IARG_END);
-            } else {
-                INS_InsertCall(ins, IPOINT_BEFORE, PredLoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD_EA, IARG_EXECUTING, IARG_END);
-            }
-        }
 
-        if (INS_HasMemoryRead2(ins)) {
-            if (!INS_IsPredicated(ins)) {
-                INS_InsertCall(ins, IPOINT_BEFORE, LoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD2_EA, IARG_END);
-            } else {
-                INS_InsertCall(ins, IPOINT_BEFORE, PredLoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD2_EA, IARG_EXECUTING, IARG_END);
-            }
-        }
+        if (INS_LockPrefix(ins) && INS_IsMemoryRead(ins) && INS_IsMemoryWrite(ins) && INS_Opcode(ins) == XED_ICLASS_ADD) {
+            // even though it is not a load, we are requesting 
+            info("coup lock add: %s\n", INS_Disassemble(ins).c_str());
+            INS_InsertCall(ins, IPOINT_BEFORE, LoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD_EA, IARG_END); 
+        } else {
 
-        if (INS_IsMemoryWrite(ins)) {
-            if (!INS_IsPredicated(ins)) {
-                INS_InsertCall(ins, IPOINT_BEFORE,  StoreFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYWRITE_EA, IARG_END);
-            } else {
-                INS_InsertCall(ins, IPOINT_BEFORE,  PredStoreFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYWRITE_EA, IARG_EXECUTING, IARG_END);
+            if (INS_IsMemoryRead(ins)) {
+                if (!INS_IsPredicated(ins)) {
+                    INS_InsertCall(ins, IPOINT_BEFORE, LoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD_EA, IARG_END);
+                } else {
+                    INS_InsertCall(ins, IPOINT_BEFORE, PredLoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD_EA, IARG_EXECUTING, IARG_END);
+                }
             }
+
+            if (INS_HasMemoryRead2(ins)) {
+                
+                if (!INS_IsPredicated(ins)) {
+
+                    INS_InsertCall(ins, IPOINT_BEFORE, LoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD2_EA, IARG_END);
+                } else {
+                    INS_InsertCall(ins, IPOINT_BEFORE, PredLoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD2_EA, IARG_EXECUTING, IARG_END);
+                }
+            }
+
+            if (INS_IsMemoryWrite(ins)) {
+                if (!INS_IsPredicated(ins)) {
+                    INS_InsertCall(ins, IPOINT_BEFORE,  StoreFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYWRITE_EA, IARG_END);
+                } else {
+                    INS_InsertCall(ins, IPOINT_BEFORE,  PredStoreFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYWRITE_EA, IARG_EXECUTING, IARG_END);
+                }
+            }
+
         }
 
         // Instrument only conditional branches
@@ -591,6 +603,8 @@ VOID Instruction(INS ins) {
      */
     if (INS_IsXchg(ins) && INS_OperandReg(ins, 0) == REG_RCX && INS_OperandReg(ins, 1) == REG_RCX) {
         //info("Instrumenting magic op");
+        info("Instruction: %s\n", INS_Disassemble(ins).c_str());
+
         INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) HandleMagicOp, IARG_THREAD_ID, IARG_REG_VALUE, REG_ECX, IARG_END);
     }
 
@@ -1213,7 +1227,7 @@ VOID HandleMagicOp(THREADID tid, ADDRINT op) {
         case 1033:
             info("Thread %d: issued %ld\n", tid, op);
             isCoup[tid] = true;
-            if(cores[tid] != nullptr) cores[tid]->coup_ld(true);
+            if(cores[tid] != nullptr) cores[tid]->coup_op(true);
             return;
         default:
             panic("Thread %d issued unknown magic op %ld!", tid, op);

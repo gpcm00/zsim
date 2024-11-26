@@ -89,7 +89,7 @@ class Core : public GlobAlloc {
 
         virtual InstrFuncPtrs GetFuncPtrs() = 0;
 
-        void coup_ld(bool state) { coup = state; if(coup) info("coup load: %d\n", coup); }
+        void coup_op(bool state) { coup = state; }
 };
 
 #endif  // CORE_H_

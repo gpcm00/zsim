@@ -17,7 +17,7 @@ void* inc_thread(void* addr) {
     for(unsigned i = 0; i < 1048576; i++) {
         val++;
     }
-    coup_add((int*)addr, val);
+    coup_add((int*)addr, val, 1030);
 
     return NULL;
 }
