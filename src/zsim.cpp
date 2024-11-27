@@ -543,6 +543,7 @@ static void PrintIp(THREADID tid, ADDRINT ip) {
 }
 #endif
 
+bool detect_coup = false;
 VOID Instruction(INS ins) {
     //Uncomment to print an instruction trace
     //INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)PrintIp, IARG_THREAD_ID, IARG_REG_VALUE, REG_INST_PTR, IARG_END);
@@ -555,7 +556,7 @@ VOID Instruction(INS ins) {
         AFUNPTR PredStoreFuncPtr = (AFUNPTR) IndirectPredStoreSingle;
 
 
-        if (INS_LockPrefix(ins) && INS_IsMemoryRead(ins) && INS_IsMemoryWrite(ins) && INS_Opcode(ins) == XED_ICLASS_ADD) {
+        if (detect_coup && INS_LockPrefix(ins) && INS_IsMemoryRead(ins) && INS_IsMemoryWrite(ins) && INS_Opcode(ins) == XED_ICLASS_ADD) {
             // even though it is not a load, we are requesting 
             info("coup lock add: %s\n", INS_Disassemble(ins).c_str());
             INS_InsertCall(ins, IPOINT_BEFORE, LoadFuncPtr, IARG_FAST_ANALYSIS_CALL, IARG_THREAD_ID, IARG_MEMORYREAD_EA, IARG_END); 
@@ -596,6 +597,8 @@ VOID Instruction(INS ins) {
         }
     }
 
+    detect_coup = false;
+    
     //Intercept and process magic ops
     /* xchg %rcx, %rcx is our chosen magic op. It is effectively a NOP, but it
      * is never emitted by any x86 compiler, as they use other (recommended) nop
@@ -604,7 +607,7 @@ VOID Instruction(INS ins) {
     if (INS_IsXchg(ins) && INS_OperandReg(ins, 0) == REG_RCX && INS_OperandReg(ins, 1) == REG_RCX) {
         //info("Instrumenting magic op");
         info("Instruction: %s\n", INS_Disassemble(ins).c_str());
-
+        detect_coup = true;
         INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) HandleMagicOp, IARG_THREAD_ID, IARG_REG_VALUE, REG_ECX, IARG_END);
     }
 

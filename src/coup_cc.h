@@ -119,4 +119,75 @@ class MEUSIBottomCC : public GlobAlloc {
 
 };
 
+class MEUSITopCC : public GlobAlloc {
+    private:
+        struct Entry {
+            uint32_t numSharers;
+            std::bitset<MAX_CACHE_CHILDREN> sharers;
+            bool exclusive;
+            bool coupState;
+
+            void clear() {
+                coupState = false;
+                exclusive = false;
+                numSharers = 0;
+                sharers.reset();
+            }
+
+            bool isEmpty() {
+                return numSharers == 0;
+            }
+
+            bool isExclusive() {
+                return (numSharers == 1) && (exclusive);
+            }
+        };
+
+        Entry* array;
+        g_vector<BaseCache*> children;
+        g_vector<uint32_t> childrenRTTs;
+        uint32_t numLines;
+
+        bool nonInclusiveHack;
+
+        PAD();
+        lock_t ccLock;
+        PAD();
+
+    public:
+        MEUSITopCC(uint32_t _numLines, bool _nonInclusiveHack) : numLines(_numLines), nonInclusiveHack(_nonInclusiveHack) {
+            array = gm_calloc<Entry>(numLines);
+            for (uint32_t i = 0; i < numLines; i++) {
+                array[i].clear();
+            }
+
+            futex_init(&ccLock);
+        }
+
+        void init(const g_vector<BaseCache*>& _children, Network* network, const char* name);
+
+        uint64_t processEviction(Address wbLineAddr, uint32_t lineId, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
+
+        uint64_t processAccess(Address lineAddr, uint32_t lineId, AccessType type, uint32_t childId, bool haveExclusive,
+                MESIState* childState, bool* inducedWriteback, uint64_t cycle, uint32_t srcId, uint32_t flags);
+
+        uint64_t processInval(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
+
+        inline void lock() {
+            futex_lock(&ccLock);
+        }
+
+        inline void unlock() {
+            futex_unlock(&ccLock);
+        }
+
+        /* Replacement policy query interface */
+        inline uint32_t numSharers(uint32_t lineId) {
+            return array[lineId].numSharers;
+        }
+
+    private:
+        uint64_t sendInvalidates(Address lineAddr, uint32_t lineId, InvType type, bool* reqWriteback, uint64_t cycle, uint32_t srcId);
+};
+
 #endif

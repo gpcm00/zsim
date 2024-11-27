@@ -59,6 +59,7 @@ typedef enum {
     INV,  // fully invalidate this line
     INVX, // invalidate exclusive access to this line (lower level can still keep a non-exclusive copy)
     FWD,  // don't invalidate, just send up the data (used by directories). Only valid on S lines.
+    UPD,
 } InvType;
 
 /* Coherence states for the MESI protocol */
