@@ -12,7 +12,8 @@
 unsigned counter = 0;
 
 void* inc_thread(void* addr) {
-    int val = coup_load((int*)addr, 1029);
+    // int val = coup_load((int*)addr, 1029);
+    int val = 0;
     printf("address = 0x%lx\n", addr);
     for(unsigned i = 0; i < 1048576; i++) {
         val++;

@@ -242,9 +242,13 @@ void DDRMemory::initStats(AggregateStat* parentStat) {
 
 uint64_t DDRMemory::access(MemReq& req) {
     switch (req.type) {
+        case PUTU:
         case PUTS:
         case PUTX:
             *req.state = I;
+            break;
+        case GETU:
+            *req.state = U;
             break;
         case GETS:
             *req.state = req.is(MemReq::NOEXCL)? S : E;
@@ -259,7 +263,7 @@ uint64_t DDRMemory::access(MemReq& req) {
     if (req.type == PUTS) {
         return req.cycle; //must return an absolute value, 0 latency
     } else {
-        bool isWrite = (req.type == PUTX);
+        bool isWrite = (req.type == PUTX || req.type == PUTU);
         uint64_t respCycle = req.cycle + (isWrite? minWrLatency : minRdLatency);
         if (zinfo->eventRecorders[req.srcId]) {
             DDRMemoryAccEvent* memEv = new (zinfo->eventRecorders[req.srcId]) DDRMemoryAccEvent(this,

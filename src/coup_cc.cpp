@@ -93,12 +93,14 @@ uint64_t MEUSIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessT
                 profGETNextLevelLat.inc(nextLevelLat);
                 profGETNetLat.inc(netLat);
                 respCycle += nextLevelLat + netLat;
-                profGETSMiss.inc();
+                profGETUMiss.inc();
                 assert(*state == U);
             } else {
-                profGETSHit.inc();
+                profGETUHit.inc();
             }
+            break;
         case GETS:
+            if(*state == U) info("GETS reducing 0x%lx", lineAddr);
             if (*state == I || *state == U) {
                 uint32_t parentId = getParentId(lineAddr);
                 MemReq req = {lineAddr, GETS, selfId, state, cycle, &ccLock, *state, srcId, flags};
@@ -114,6 +116,7 @@ uint64_t MEUSIBottomCC::processAccess(Address lineAddr, uint32_t lineId, AccessT
             }
             break;
         case GETX:
+            if(*state == U) info("GETX reducing 0x%lx", lineAddr);
             if (*state == I || *state == S || *state == U) {
                 //Profile before access, state changes
                 if (*state == I) profGETXMissIM.inc();
@@ -238,6 +241,8 @@ uint64_t MEUSITopCC::sendInvalidates(Address lineAddr, uint32_t lineId, InvType 
         assert(sentInvs == e->numSharers);
         if (type == INV) {
             e->numSharers = 0;
+        } else if(type == UPD) {
+            e->exclusive = false;
         } else {
             //TODO: This is kludgy -- once the sharers format is more sophisticated, handle downgrades with a different codepath
             assert(e->exclusive);
@@ -282,7 +287,11 @@ uint64_t MEUSITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType
             *childState = I;
             break;
         case GETU:
-            assert(e->sharers[childId] == false);
+            // if child is in the sharer list, then it is changing its state to update, don't inv it
+            if (e->sharers[childId]) {
+                e->sharers[childId] = false;
+                e->numSharers--;
+            }
 
             if (!e->isEmpty() && !e->coupState) {
                 respCycle = sendInvalidates(lineAddr, lineId, UPD, inducedWriteback, cycle, srcId);
@@ -293,6 +302,7 @@ uint64_t MEUSITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType
             e->numSharers++;
             e->exclusive = false;
             *childState = U;
+            info("coup load\n");
             break;
         case GETS:
             if (e->isEmpty() && haveExclusive && !(flags & MemReq::NOEXCL)) {
@@ -302,8 +312,9 @@ uint64_t MEUSITopCC::processAccess(Address lineAddr, uint32_t lineId, AccessType
                 e->numSharers = 1;
                 *childState = E;
             } else {
+                // info("chld state = %d\n", *childState);
                 //Give in S state
-                assert(e->sharers[childId] == false);
+                assert(e->sharers[childId] == false || *childState == U);
 
                 if (e->isExclusive()) {
                     //Downgrade the exclusive sharer

@@ -1101,9 +1101,13 @@ void MemControllerBase::TickScheduler(uint64_t sysCycle) {
 
 uint64_t MemControllerBase::access(MemReq& req) {
     switch (req.type) {
+        case PUTU:
         case PUTS:
         case PUTX:
             *req.state = I;
+            break;
+        case GETU:
+            *req.state = U;
             break;
         case GETS:
             *req.state = E;
@@ -1118,7 +1122,7 @@ uint64_t MemControllerBase::access(MemReq& req) {
     if (req.type == PUTS)
         return req.cycle;
 
-    MemAccessType accessType = (req.type == PUTS || req.type == PUTX) ? WRITE : READ;
+    MemAccessType accessType = (req.type == PUTS || req.type == PUTX || req.type == PUTU) ? WRITE : READ;
     uint64_t respCycle = req.cycle + minLatency[accessType];
     assert(respCycle >= req.cycle);
 

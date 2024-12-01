@@ -37,6 +37,7 @@
 #include "constants.h"
 #include "contention_sim.h"
 #include "core.h"
+#include "coup_cc.h"
 #include "detailed_mem.h"
 #include "detailed_mem_params.h"
 #include "ddr_mem.h"
@@ -263,9 +264,9 @@ BaseCache* BuildCacheBank(Config& config, const string& prefix, g_string& name, 
     Cache* cache;
     CC* cc;
     if (isTerminal) {
-        cc = new MESITerminalCC(numLines, name);
+        cc = new MEUSITerminalCC(numLines, name);
     } else {
-        cc = new MESICC(numLines, nonInclusiveHack, name);
+        cc = new MEUSICC(numLines, nonInclusiveHack, name);
     }
     rp->setCC(cc);
     if (!isTerminal) {

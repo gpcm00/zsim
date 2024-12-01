@@ -251,14 +251,14 @@ static inline bool CheckForMESIRace(AccessType& type, MESIState* state, MESIStat
     if (*state != initialState) {
         //info("[%s] Race on line 0x%lx, %s by childId %d, was state %s, now %s", name.c_str(), lineAddr, accessTypeNames[type], childId, mesiStateNames[initialState], mesiStateNames[*state]);
         //An intervening invalidate happened! Two types of races:
-        if (type == PUTS || type == PUTX) { //either it is a PUT...
+        if (type == PUTS || type == PUTX || type == PUTU) { //either it is a PUT...
             //We want to get rid of this line
             if (*state == I) {
                 //If it was already invalidated (INV), just skip access altogether, we're already done
                 skipAccess = true;
             } else {
                 //We were downgraded (INVX), still need to do the PUT
-                assert(*state == S);
+                assert(*state == S || *state == U);
                 //If we wanted to do a PUTX, just change it to a PUTS b/c now the line is not exclusive anymore
                 if (type == PUTX) type = PUTS;
             }
@@ -267,8 +267,17 @@ static inline bool CheckForMESIRace(AccessType& type, MESIState* state, MESIStat
             assert(initialState == S);
             assert(*state == I);
             //Do nothing. This is still a valid GETX, only it is not an upgrade miss anymore
+        } else if (type == GETU) {
+                info("type = %d, state = %d, initialState = %d\n", type, *state, initialState);
+                panic("I don't know");
         } else { //no GETSs can race with INVs, if we are doing a GETS it's because the line was invalid to begin with!
-            panic("Invalid true race happened (?)");
+            if (initialState == U) {
+                assert(*state == I);
+                info("Caught this");
+            } else {
+                info("type = %d, state = %d, initialState = %d\n", type, *state, initialState);
+                panic("Invalid true race happened (?)");
+            }
         }
     }
     return skipAccess;

@@ -127,6 +127,7 @@ void TraceDriver::executeAccess(AccessRecord acc) {
 
     int64_t lat = 0;
     switch (acc.type) {
+        // case PUTU:
         case PUTS:
         case PUTX:
             {
@@ -139,6 +140,7 @@ void TraceDriver::executeAccess(AccessRecord acc) {
                 cStore.erase(it);
             }
             break;
+        // case GETU:
         case GETS:
         case GETX:
             {

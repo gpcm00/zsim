@@ -23,7 +23,7 @@ void coup_add(int *addr, int val, unsigned coup_op) {
 }
 
 
-int coup_load(int* var, unsigned coup_op) {
+static inline int coup_load(int* var, unsigned coup_op) {
     int output;
     COMPILER_BARRIER();
     __asm__ __volatile__(
