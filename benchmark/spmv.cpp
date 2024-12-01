@@ -64,8 +64,7 @@ void multiplyCSCMatVecChunk(const CSCMatrix &matrix, const std::vector<int> &vec
     
     for (int row = 0; row < matrix.rows; ++row) {
 
-        int val = coup_load(&result[row], 1029);
-        val += localResult[row];
+        coup_add(&result[row], localResult[row], 1029);
     }
 }
 

@@ -10,8 +10,8 @@
 void histogramBuckets(const std::vector<int>& numbers, std::map<int, int>& histogram, int start, int end) { 
     for (int i = start; i < end; ++i) { 
         
-        int val = coup_load(&histogram[numbers[i]], 1029);
-        val++; 
+        coup_add(&histogram[numbers[i]], 1, 1029);
+        
     } 
 }
 
@@ -45,12 +45,12 @@ int main(int argc, char** argv){
     for (int i = 0; i < nthreads; ++i) { 
         int start = i * chunkSize; 
         int end;
-    if (i == nthreads - 1) { // makes sure to get everything left on last thread
-        end = numElements;
-    } else {
-        end = start + chunkSize;
-    }
-        threads.emplace_back(histogramBuckets, std::ref(numbers), std::ref(histogram), start, end); 
+        if (i == nthreads - 1) { // makes sure to get everything left on last thread
+            end = numElements;
+        } else {
+            end = start + chunkSize;
+        }
+            threads.emplace_back(histogramBuckets, std::ref(numbers), std::ref(histogram), start, end); 
     }
 
     for (auto& th : threads) { 
