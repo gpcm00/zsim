@@ -57,7 +57,7 @@ void multiplyCSCMatVecChunk(const CSCMatrix &matrix, const std::vector<int> &vec
 
     for (int col = startCol; col < endCol; ++col) {
         for (int idx = matrix.colPtr[col]; idx < matrix.colPtr[col + 1]; ++idx) {
-            localResult[matrix.rowIndices[idx]] += matrix.values[idx] * vec[col];
+            localResult[matrix.rowIndices[idx]] += matrix.values[idx] * vec[col]; // coup add
         }
     }
 

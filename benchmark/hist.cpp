@@ -32,7 +32,7 @@ int main(int argc, char** argv){
     }
 
     unsigned nthreads = std::stoi(argv[1]);
-    int numElements = 1000000;
+    int numElements = 100000;
     std::vector<int> numbers; 
     generateRandomNumbers(numbers, numElements);
 
