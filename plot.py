@@ -38,7 +38,7 @@ def get_data(path):
 
 def create_fig(cCores, rCores, cData, rData, index, ax):
     
-    ax.title.set_text(data_labels[index%5])
+    ax.title.set_text(data_labels[index%3])
     cData = [cData[i][index]*0.8 for i in range(len(cData))]
     rData = [rData[i][index] for i in range(len(rData))]
     ax.plot(cCores, cData, label='coup')  # Plot the chart
@@ -81,7 +81,7 @@ def create_bar_graph(coup_path, regular_path, name):
     fig.suptitle(name, fontsize=16)
     axs = fig.subplots(2, 1) # set number of graphs you want
     # add your graphs here
-    create_fig(coup_cores, regular_cores, coup_data, regular_data, 5, axs[0])
+    create_fig(coup_cores, regular_cores, coup_data, regular_data, 3, axs[0])
     create_fig(coup_cores, regular_cores, coup_data, regular_data, 0, axs[1])
     
     print('should be saving a file')
