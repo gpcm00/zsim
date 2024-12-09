@@ -4,7 +4,7 @@ import h5py
 import argparse
 import os
 
-data_labels = ['GETX hits', 'GETX I->M misses', 'S->M misses (upgrade misses)', 'Dirty evictions (from lower level)', 'Downgrades (from upper level)']
+data_labels = ['GETX hits', 'Dirty evictions (from lower level)', 'Invalidates (from upper level)']
 graph_num= 0
 def get_data(path):
     files = os.listdir(path)
@@ -21,20 +21,16 @@ def get_data(path):
         cores.append(len(dset[-1]['wimpy']))
         current_data = []
         current_data.append(dset[-1]['l2_wimpy'][0]['hGETX'])
-        current_data.append(dset[-1]['l2_wimpy'][0]['mGETXIM'])
-        current_data.append(dset[-1]['l2_wimpy'][0]['mGETXSM'])
         current_data.append(dset[-1]['l2_wimpy'][0]['PUTX'])
-        current_data.append(dset[-1]['l2_wimpy'][0]['INVX'])
-        print('L2 data, GETX hits, GETX I->M misses, S->M misses (upgrade misses), Dirty evictions (from lower level), Downgrades (from upper level)')
+        current_data.append(dset[-1]['l2_wimpy'][0]['INV'])
+        print('L2 data, GETX hits, Dirty evictions (from lower level), Invalidates (from upper level)')
         print(current_data)
 
         current_data.append(np.sum(dset[-1]['l1d_wimpy']['hGETX']))
-        current_data.append(np.sum(dset[-1]['l1d_wimpy']['mGETXIM']))
-        current_data.append(np.sum(dset[-1]['l1d_wimpy']['mGETXSM']))
         current_data.append(np.sum(dset[-1]['l1d_wimpy']['PUTX']))
-        current_data.append(np.sum(dset[-1]['l1d_wimpy']['INVX']))
+        current_data.append(np.sum(dset[-1]['l1d_wimpy']['INV']))
 
-        print('L1d summed data, GETX hits, GETX I->M misses, S->M misses (upgrade misses), Dirty evictions (from lower level), Downgrades (from upper level)')
+        print('L1d summed data, GETX hits, Dirty evictions (from lower level), Invalidates (from upper level)')
         print(current_data[5:])
         data.append(current_data)
         
