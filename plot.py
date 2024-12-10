@@ -51,7 +51,9 @@ def create_bar_graph(coup_path, regular_path, name, l2, l1):
     if not os.path.exists(regular_path):
         print(regular_path, 'was not reconized as a path')
         return
-    
+    if(not os.path.exists('plots')):
+            os.mkdir('plots')
+
     coup_data, coup_cores = get_data(coup_path, l2, l1)
     regular_data, regular_cores = get_data(regular_path, l2, l1)
 
@@ -73,14 +75,15 @@ def create_bar_graph(coup_path, regular_path, name, l2, l1):
         rData = [regular_data[j][k] for j in range(len(regular_data))]
         ax.plot(coup_cores, cData, label='coup')  # Plot the chart
         ax.plot(regular_cores, rData, label='regular')  # Plot the chart
+        ax.set_xlabel('Number of cores')
+        ax.set_ylabel('Count')
         ax.set_xticks(regular_cores)
         fig.legend(loc=2, prop={'size': 8})
         
         
         print('should be saving a file')
         fig.tight_layout()
-        if(not os.path.exists('plots')):
-            os.mkdir('plots')
+        
         fig.savefig('plots/l2_'+name+'_'+l2[k]+".png", format='png', dpi=600)
 
     # L1 data
@@ -96,12 +99,11 @@ def create_bar_graph(coup_path, regular_path, name, l2, l1):
         ax.plot(regular_cores, rData, label='regular')  # Plot the chart
         ax.set_xticks(regular_cores)
         fig.legend(loc=2, prop={'size': 8})
-        
-        
+        ax.set_xlabel('Number of cores')
+        ax.set_ylabel('Count')
         print('should be saving a file')
         fig.tight_layout()
-        if(not os.path.exists('plots')):
-            os.mkdir('plots')
+        
         fig.savefig('plots/l1_'+name+'_'+l1[i]+".png", format='png', dpi=600)
 
 
