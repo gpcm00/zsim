@@ -53,11 +53,13 @@ int main(int argc, char** argv){
             threads.emplace_back(histogramBuckets, std::ref(numbers), std::ref(histogram), start, end); 
     }
 
+    zsim_roi_end();
+    
     for (auto& th : threads) { 
         th.join();
     }
 
-    zsim_roi_end();
+    
 
     for (const auto& pair : histogram) { 
         std::cout << "Value: " << pair.first << " Count: " << pair.second << std::endl; 

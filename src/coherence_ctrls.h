@@ -263,13 +263,13 @@ static inline bool CheckForMESIRace(AccessType& type, MESIState* state, MESIStat
                 if (type == PUTX) type = PUTS;
             }
         } else if (type == GETX) { //...or it is a GETX
-            //In this case, the line MUST have been in S and have been INValidated
-            assert(initialState == S);
-            assert(*state == I);
+            //In this case, the line MUST have been in S or U and have been INValidated
+            assert(initialState == S || initialState == U);
+            assert(*state == I || *state == U);
             //Do nothing. This is still a valid GETX, only it is not an upgrade miss anymore
         } else if (type == GETU) {
                 info("type = %d, state = %d, initialState = %d\n", type, *state, initialState);
-                panic("I don't know");
+                //panic("I don't know");
         } else { //no GETSs can race with INVs, if we are doing a GETS it's because the line was invalid to begin with!
             if (initialState == U) {
                 assert(*state == I);

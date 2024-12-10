@@ -43,7 +43,7 @@ CSCMatrix generateRandomCSCMatrix(int M, int N, double sparsity) {
 std::vector<int> generateRandomVector(int N) {
     std::vector<int> vector(N);
     std::default_random_engine generator;
-    std::uniform_real_distribution<int> distribution(1, 5);
+    std::uniform_int_distribution<int> distribution(1, 5);
 
     for (int i = 0; i < N; ++i) {
         vector[i] = distribution(generator);
