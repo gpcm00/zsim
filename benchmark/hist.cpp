@@ -1,24 +1,24 @@
 #include <iostream>
-#include "zsim_hooks.h"
-#include "coup_hooks.h"
-#include <thread>
 #include <vector>
+#include <thread>
 #include <map>
 #include <random>
+#include "coup_hooks.h"
+#include "zsim_hooks.h"
+
+using namespace std;
 
 
-void histogramBuckets(const std::vector<int>& numbers, std::map<int, int>& histogram, int start, int end) { 
+void histogramBuckets(const vector<int>& numbers, map<int, int>& histogram, int start, int end) { 
     for (int i = start; i < end; ++i) { 
-        
         coup_add(&histogram[numbers[i]], 1, 1029);
-        
     } 
 }
 
-void generateRandomNumbers(std::vector<int>& numbers, int numElements) { 
+void generateRandomNumbers(vector<int>& numbers, int numElements) { 
     
-    std::mt19937 gen(12345); // using a seed so we can see the same results
-    std::uniform_int_distribution<int> dist(0, 1000); 
+    mt19937 gen(12345); // using a seed so we can see the same results
+    uniform_int_distribution<int> dist(0, 100); 
     for (int i = 0; i < numElements; ++i) { 
         numbers.push_back(dist(gen)); 
     } 
@@ -31,14 +31,14 @@ int main(int argc, char** argv){
         exit(EXIT_FAILURE);
     }
 
-    unsigned nthreads = std::stoi(argv[1]);
+    unsigned nthreads = stoi(argv[1]);
     int numElements = 100000;
-    std::vector<int> numbers; 
+    vector<int> numbers; 
     generateRandomNumbers(numbers, numElements);
 
-    std::map<int, int> histogram;
+    map<int, int> histogram;
 
-    std::vector<std::thread> threads;
+    vector<thread> threads;
     int chunkSize = numElements / nthreads;
     zsim_roi_begin();
 
@@ -50,11 +50,11 @@ int main(int argc, char** argv){
         } else {
             end = start + chunkSize;
         }
-            threads.emplace_back(histogramBuckets, std::ref(numbers), std::ref(histogram), start, end); 
+            threads.emplace_back(histogramBuckets, ref(numbers), ref(histogram), start, end); 
     }
 
     zsim_roi_end();
-    
+
     for (auto& th : threads) { 
         th.join();
     }
@@ -62,7 +62,7 @@ int main(int argc, char** argv){
     
 
     for (const auto& pair : histogram) { 
-        std::cout << "Value: " << pair.first << " Count: " << pair.second << std::endl; 
+        cout << "Value: " << pair.first << " Count: " << pair.second << endl; 
     }
 
     return 0;
