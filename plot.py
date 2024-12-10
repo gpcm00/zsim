@@ -15,8 +15,15 @@ def get_data(path, l2, l1):
         f = h5py.File(os.path.join(path, file), 'r')
         dset = f["stats"]["root"]
         
-        print('Number of cores', len(dset[-1]['wimpy']))
-        cores.append(len(dset[-1]['wimpy']))
+        count = 0
+        for i in range(len(dset[-1]['wimpy'])-1, -1, -1):
+            if dset[-1]['wimpy'][i]['cycles'] == 0:
+                count +=1
+            else:
+                break
+        print('Number of used cores:', len(dset[-1]['wimpy'])-count)
+        
+        cores.append(len(dset[-1]['wimpy'])-count)
         current_data = []
         for string in l2:
             try:
