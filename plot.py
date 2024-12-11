@@ -33,8 +33,10 @@ def get_data(path, l2, l1, cycles):
         
         for string in l1:
             try:
+                print(f"caught {string}")
                 current_data.append(np.sum(dset[-1]['l1d_wimpy'][string]))
             except:
+                 print(f"except {string}")
                  current_data.append(0)
         
         if cycles:
@@ -136,7 +138,7 @@ def create_bar_graph(coup_path, regular_path, name, l2, l1, cycles):
         ax.plot(coup_cores, Data)  # Plot the chart
         ax.set_xticks(regular_cores)
         ax.set_xlabel('Number of cores')
-        ax.set_ylabel('percent difference base/coup')
+        ax.set_ylabel('Speedup')
         print('should be saving a file')
         fig.tight_layout()
         
