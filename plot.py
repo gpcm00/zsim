@@ -27,20 +27,20 @@ def get_data(path, l2, l1, cycles):
         current_data = []
         for string in l2:
             try:
-                current_data.append(dset[-1]['l2_wimpy'][0][string])
+                current_data.append(np.sum(dset[-1]['l2_wimpy'][string]))
             except:
                  current_data.append(0)
         
         for string in l1:
             try:
-                current_data.append(np.sum(dset[-1]['l1_wimpy'][string]))
+                current_data.append(np.sum(dset[-1]['l1d_wimpy'][string]))
             except:
                  current_data.append(0)
         
         if cycles:
             used_cores = dset[-1]['wimpy'][:len(dset[-1]['wimpy'])-count]
             current_data.append(np.average(used_cores['cycles']))
-            current_data.append(dset[-1]['time'][3])
+            
         
         print(current_data)
         data.append(current_data)
@@ -98,9 +98,12 @@ def create_bar_graph(coup_path, regular_path, name, l2, l1, cycles):
         fig.savefig('plots/l2_'+name+'_'+l2[k]+".png", format='png', dpi=600)
 
     # L1 data
-    for i in range(len(l1)):
+    ik = 0
+    while ik < len(l1):
+        i = len(l2) + ik
+        
         fig = plt.figure()
-        fig.suptitle(name+' '+l1[i], fontsize=16)
+        fig.suptitle(name+' '+l1[ik], fontsize=16)
         ax = fig.add_subplot(111)
         
 
@@ -115,7 +118,8 @@ def create_bar_graph(coup_path, regular_path, name, l2, l1, cycles):
         print('should be saving a file')
         fig.tight_layout()
         
-        fig.savefig('plots/l1_'+name+'_'+l1[i]+".png", format='png', dpi=600)
+        fig.savefig('plots/l1_'+name+'_'+l1[ik]+".png", format='png', dpi=600)
+        ik+=1
 
     #check if cycles graph should be made
     
@@ -137,24 +141,6 @@ def create_bar_graph(coup_path, regular_path, name, l2, l1, cycles):
         fig.tight_layout()
         
         fig.savefig('plots/l1_'+name+'_Average Cycles'+".png", format='png', dpi=600)
-
-        i +=1
-        fig = plt.figure()
-        fig.suptitle(name+' time-bound', fontsize=16)
-        ax = fig.add_subplot(111)
-        
-
-        Data = [regular_data[j][i]/coup_data[j][i] for j in range(len(coup_data))]
-        
-
-        ax.plot(coup_cores, Data)  # Plot the chart
-        ax.set_xticks(regular_cores)
-        ax.set_xlabel('Number of cores')
-        ax.set_ylabel('percent difference base/coup')
-        print('should be saving a file')
-        fig.tight_layout()
-        
-        fig.savefig('plots/l1_'+name+'_time-bound'+".png", format='png', dpi=600)
 
 
 if __name__ == "__main__":

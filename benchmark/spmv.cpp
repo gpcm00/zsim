@@ -57,19 +57,21 @@ void generateRandomVector(int* vector, int N) {
 }
 
 void multiplyCSCMatVecChunk(const CSCMatrix &matrix, const int* vec, int* result, int startCol, int endCol) {
-    int* localResult = new int[matrix.rows]();
+    // int* localResult = new int[matrix.rows]();
     
     for (int col = startCol; col < endCol; ++col) {
         for (int idx = matrix.colPtr[col]; idx < matrix.colPtr[col + 1]; ++idx) {
-            localResult[matrix.rowIndices[idx]] += matrix.values[idx] * vec[col]; // coup add
+            int tmp = matrix.values[idx] * vec[col];
+            coup_add(&result[matrix.rowIndices[idx]], tmp, 1029);
+            // localResult[matrix.rowIndices[idx]] += matrix.values[idx] * vec[col]; // coup add
         }
     }
 
-    for (int row = 0; row < matrix.rows; ++row) {
-        coup_add(&result[row], localResult[row], 1029);
-    }
+    // for (int row = 0; row < matrix.rows; ++row) {
+    //     coup_add(&result[row], localResult[row], 1029);
+    // }
 
-    delete[] localResult;
+    // delete[] localResult;
 }
 
 void parallelMultiplyCSCMatVec(const CSCMatrix &matrix, const int* vec, int* result, int numThreads) {
