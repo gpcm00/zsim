@@ -4,7 +4,7 @@ import h5py
 import argparse
 import os
 
-def get_data(path, l2, l1):
+def get_data(path, l2, l1, cycles):
     files = os.listdir(path)
     print(files)
     cores = []
@@ -37,6 +37,10 @@ def get_data(path, l2, l1):
             except:
                  current_data.append(0)
         
+        if cycles:
+            used_cores = dset[-1]['wimpy'][:len(dset[-1]['wimpy'])-count]
+            current_data.append(np.average(used_cores['cycles']))
+            current_data.append(dset[-1]['time'][3])
         
         print(current_data)
         data.append(current_data)
@@ -45,7 +49,7 @@ def get_data(path, l2, l1):
 
 
 
-def create_bar_graph(coup_path, regular_path, name, l2, l1):
+def create_bar_graph(coup_path, regular_path, name, l2, l1, cycles):
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
@@ -61,8 +65,8 @@ def create_bar_graph(coup_path, regular_path, name, l2, l1):
     if(not os.path.exists('plots')):
             os.mkdir('plots')
 
-    coup_data, coup_cores = get_data(coup_path, l2, l1)
-    regular_data, regular_cores = get_data(regular_path, l2, l1)
+    coup_data, coup_cores = get_data(coup_path, l2, l1, cycles)
+    regular_data, regular_cores = get_data(regular_path, l2, l1, cycles)
 
     sorted_index = np.argsort(coup_cores)
     coup_cores = [coup_cores[i] for i in sorted_index]
@@ -113,6 +117,45 @@ def create_bar_graph(coup_path, regular_path, name, l2, l1):
         
         fig.savefig('plots/l1_'+name+'_'+l1[i]+".png", format='png', dpi=600)
 
+    #check if cycles graph should be made
+    
+    if cycles:
+        i = len(l1) + len(l2)
+        fig = plt.figure()
+        fig.suptitle(name+' Average Cycles', fontsize=16)
+        ax = fig.add_subplot(111)
+        
+
+        Data = [regular_data[j][i]/coup_data[j][i] for j in range(len(coup_data))]
+        
+
+        ax.plot(coup_cores, Data)  # Plot the chart
+        ax.set_xticks(regular_cores)
+        ax.set_xlabel('Number of cores')
+        ax.set_ylabel('percent difference base/coup')
+        print('should be saving a file')
+        fig.tight_layout()
+        
+        fig.savefig('plots/l1_'+name+'_Average Cycles'+".png", format='png', dpi=600)
+
+        i +=1
+        fig = plt.figure()
+        fig.suptitle(name+' time-bound', fontsize=16)
+        ax = fig.add_subplot(111)
+        
+
+        Data = [regular_data[j][i]/coup_data[j][i] for j in range(len(coup_data))]
+        
+
+        ax.plot(coup_cores, Data)  # Plot the chart
+        ax.set_xticks(regular_cores)
+        ax.set_xlabel('Number of cores')
+        ax.set_ylabel('percent difference base/coup')
+        print('should be saving a file')
+        fig.tight_layout()
+        
+        fig.savefig('plots/l1_'+name+'_time-bound'+".png", format='png', dpi=600)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -121,9 +164,10 @@ if __name__ == "__main__":
     parser.add_argument("name", help="Name that the png that will be created", type=str)
     parser.add_argument("-l2", nargs='+', help="all the l2 arguments you want to make graphs for")
     parser.add_argument("-l1", nargs='+', help="all the l1 arguments you want to make graphs for")
+    parser.add_argument("-average_cycles", help="Do you have to make a graph comaring average cycles", type=bool)
     
     args = parser.parse_args()
-    create_bar_graph(args.coup, args.regular, args.name, args.l2, args.l1)
+    create_bar_graph(args.coup, args.regular, args.name, args.l2, args.l1, args.average_cycles)
 
 
     # i = 0
