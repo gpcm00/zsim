@@ -1,5 +1,8 @@
 #!/bin/bash
 
+args=(
+    "matrix_data/coup matrix_data/base Dense_Matrix"
+)
 
 l2=(
     "hGETX"
@@ -13,7 +16,7 @@ l1=(
     "mGETXSM"
 )
 
-python plot.py $@ -l2 ${l2[@]} -l1 ${l1[@]} -average_cycle 1
+python plot.py ${args[@]} -l2 ${l2[@]} -l1 ${l1[@]} -average_cycle 1
 
 # l2=(
 #     'mGETS'
