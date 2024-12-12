@@ -1,8 +1,10 @@
 Below is the readme for Zsim itself. The configuration files we used for zsim were `het_copy.cfg`
 
-After buildding Zsim you will need to run `./build/opt/zsim het_copy.cfg` In order to run the base case you will need to clone a fresh zsim and add our `benchmark` folder and our configuration file in the `tests` folder.
+After buildding Zsim `./build/opt/zsim het_copy.cfg` will run our dense matrix muliplication using coup
 
-The graphs were created using `./run_plot.sh` which gives the python `plot.py` script all it's arguments, the plots will be regenerated in the `plots` folder
+In order to run the base case you will need to clone a fresh zsim and add our `benchmark` folder and our configuration file in the `tests` folder.
+
+The graphs were created using `./run_plot.sh` which gives the python `plot.py` script all it's arguments. The data for those scripts are currently stored in the `matrix_data` folder. The plots will be regenerated in the `plots` folder
 
 zsim
 ====
