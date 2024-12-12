@@ -8,13 +8,9 @@
 
 #include "coup_hooks.h"
 
-using namespace std;
+using namespace std;W
 
-#ifdef NAIVE_MATRIX
-#define ADD
-#endif
-
-// floating point is too hard, so we are making a fixed point
+// atomic add for floating point is too hard, so we are making a fixed point
 // arithmetic with 1/(2^16) resolution
 typedef union fixed_point_t {
     struct {
@@ -82,6 +78,8 @@ class Matrix {
    
 public:
     Matrix(unsigned r, unsigned c) : row(r), col(c) {
+    /* if we use native c++ algorithms, memory access pattern will
+       be unpredictable, so it is better to do things from scratch */
         unsigned total_sz = row*col*sizeof(fixed_point_t);
         elements = (fixed_point_t*)malloc(total_sz);
         memset(elements, 0, total_sz);
@@ -161,8 +159,9 @@ public:
     }
 
     void erase() {
-        if(elements != NULL)
+        if(elements != NULL) {
             free(elements); 
+        }
         elements = NULL;
         row = 0; 
         col = 0; 
@@ -187,6 +186,31 @@ public:
     unsigned size() {return sz;}
 
     Matrix cpy_A_matrix(unsigned pt) {
+        /*
+            decompose A matrix into ONE chunk of size sz
+            For example if size is 3, and A is a 5 by 5 matrix
+                a11 a12 a13 a14 a15
+                a21 a22 a23 a24 a25
+            A = a31 a32 a33 a34 a35
+                a41 a42 a43 a44 a45
+                a51 a52 a53 a54 a55
+
+            then chunk 0 will be        chunk 1 will be     
+                    a11 a12 a13                  a14 a15 0        
+            A_0 =   a21 a22 a23          A_1 =   a24 a25 0         
+                    a31 a32 a33                  a34 a35 0
+            
+            chunk 2                      chunk 3
+                    a41 a42 a43                  a44 a45 0
+            A_2 =   a51 a52 a53           A_3 =  a54 a55 0
+                     0   0   0                    0   0  0
+
+            However, this code allows A to be whatever size you want,
+            and we are decomposing into sizes of 16... I used size 3 for simplicity
+
+            This function only returns one chunk based on the pt variable
+        */
+        
         Matrix newMat(sz, sz);
 
         // check how many times we need to decompose the matrix in rows and columns
@@ -200,8 +224,9 @@ public:
             throw runtime_error("Too many decompositions");
         }
 
+        // do the actual copying
         for(unsigned r = 0; r < sz; r++) {
-            unsigned r_offs = (row_pt * sz + r);
+            unsigned r_offs = (row_pt * sz + r); 
             if(r_offs >= A.rows()) 
                 continue;
             for(unsigned c = 0; c < sz; c++) {
@@ -216,6 +241,10 @@ public:
     };
 
     Matrix cpy_B_matrix(Matrix& B, unsigned pt) {
+        /*
+            similar to cpy_A_matrix, but this function
+            decomposes B into chunks of 16 x number of columns in B
+        */
         Matrix newMat(sz, B.columns());
 
         // check how many rows we need to decompose
@@ -243,6 +272,8 @@ public:
 
     void mult(Matrix& B, unsigned ptA) {
 
+        /* multiply chunk A to its corresponding chunk in B */
+
         if(Res->row != A.row && Res->col != B.col) {
             printf("%d - %d, %d\n", ptA, Res->row, Res->col);
             throw runtime_error("Invalid matrix multiplication");
@@ -250,34 +281,39 @@ public:
 
         printf("Initiating decomposition: %d\n", ptA);
 
+        // re-implementation of the ceiling function - kinda
         unsigned num_c_pieces_A = (A.col + (sz - (A.col % sz))) / sz;
         unsigned num_r_pieces_A = (A.row + (sz - (A.row % sz))) / sz;
 
         unsigned num_r_pieces_B = (B.row + (sz - (B.row % sz))) / sz;
 
+        // these variables point to the first variable on the row and column
         unsigned col_pt = ptA % num_c_pieces_A;    
         unsigned row_pt = ptA / num_c_pieces_A;
 
         Matrix CalA = cpy_A_matrix(ptA);
         Matrix CalB = cpy_B_matrix(B, col_pt);
 
+        // multiply!
         for(unsigned k = 0; k < CalB.col; k++) {
             unsigned k_offs = k;
 
             for(unsigned i = 0; i < CalA.row; i++) {
                 unsigned i_offs = row_pt * sz + i;
                 
-                long tmp = 0;
+                long tmp = 0;     // long for extra precision
                 #pragma omp simd
                 for(unsigned j = 0; j < CalA.col; j++) {
                     long calc = (long)CalA.elements[i*CalA.col + j].n * (long)CalB.elements[j*CalB.col + k].n;
                     tmp += calc;
                 }
 
+                // scale result back to fixed_point_t
                 int result = (int)(tmp >> 16) + ((tmp & (1<<16))? 1 : 0);
-                
+
+                // avoid seg fault for matrix that cannot fit into chunks of 16 exactly
                 if(i_offs < Res->row && k_offs < Res->col) {
-                    coup_add(&Res->elements[i_offs * Res->col + k_offs].n, result, 1029);
+                    coup_add(&Res->elements[i_offs * Res->col + k_offs].n, result, 1029);    // finally where the magic happens
                 }
             }
         }
@@ -287,47 +323,14 @@ public:
         CalA.erase();
         CalB.erase();
     }
-
-    Matrix decomposed_multiply(Matrix& B) {
-        unsigned num_c_pieces_A = (A.columns() + (sz - (A.columns() % sz))) / sz;
-        unsigned num_r_pieces_A = (A.rows() + (sz - (A.rows() % sz))) / sz;
-
-        thread* jobs = (thread*)malloc(num_c_pieces_A * num_r_pieces_A * sizeof(thread));
-        printf("%d threads will be created\n", num_c_pieces_A * num_r_pieces_A);
-        Matrix result(A.row, B.col);
-        Res = &result;
-
-        unsigned ptA = 0;
-        for(unsigned rA = 0; rA < num_r_pieces_A; rA++) {
-            for(unsigned cA = 0; cA < num_c_pieces_A; cA++) {
-                printf("issuing thread %d\n", ptA);
-                jobs[ptA] = thread(&Decomposed_Matrix::mult, this, ref(B), ptA);
-                ptA++;
-                // mult(B, ptA++);
-            }
-        }
-
-        // this_thread::sleep_for(chrono::seconds(15));
-        printf("%d threads created\n", ptA);
-
-        for(unsigned i = 0; i < ptA; i++) { 
-            if(jobs[i].joinable()) {
-                jobs[i].join();
-                printf("joining %d\n", i);
-            }
-        }
-
-        free(jobs);
-        jobs = NULL;
-
-        return result;
-    }
 };
 
 int main() {
 
     Matrix A = Matrix(100,256);
     Matrix B = Matrix(256,100);
+
+    // add something to the matrix
     float v = 0.01;
     for(unsigned r = 0; r < A.rows(); r++) {
         for(unsigned c = 0; c < A.columns(); c++) {
@@ -336,6 +339,7 @@ int main() {
         }
     }
 
+    // same as above
     v = 0.01;
     for(unsigned r = 0; r < B.rows(); r++) {
         for(unsigned c = 0; c < B.columns(); c++) {
@@ -344,31 +348,29 @@ int main() {
         }
     }
 
-    // display_matrix(A);
-    // display_matrix(B);
-
-    Matrix C = A * B;    
+    Matrix C = A * B;         // to verify that the algorithm is working   
+    
     Decomposed_Matrix DA(A);
 
     zsim_roi_begin();
-
-    // Matrix CC = DA.decomposed_multiply(B);
-    Matrix CC = Matrix(A.rows(), B.columns());
+    
+    Matrix CC = Matrix(A.rows(), B.columns());    // result matrix
     DA.Res = &CC;
 
+    // check how many chunks we need
     unsigned num_c_pieces_A = (A.columns() + (DA.size() - (A.columns() % DA.size()))) / DA.size();
     unsigned num_r_pieces_A = (A.rows() + (DA.size() - (A.rows() % DA.size()))) / DA.size();
 
-    // thread* jobs = (thread*)malloc(num_c_pieces_A * num_r_pieces_A * sizeof(thread));
+    // one thread per chunk
     vector<thread> jobs;
     printf("%d threads will be created\n", num_c_pieces_A * num_r_pieces_A);
 
+    // assign each thread to emulate DSA
     unsigned ptA = 0;
     for(unsigned rA = 0; rA < num_r_pieces_A; rA++) {
         for(unsigned cA = 0; cA < num_c_pieces_A; cA++) {
             printf("issuing thread %d\n", ptA);
             jobs.emplace_back(&Decomposed_Matrix::mult, &DA, ref(B), ptA++);
-            // mult(B, ptA++);
         }
     }
 
@@ -382,15 +384,15 @@ int main() {
 
     zsim_roi_end();
 
+    // sanity check to make sure that the multiplication is right
     for(unsigned r = 0; r < C.rows(); r++) {
         for(unsigned c = 0; c < C.columns(); c++) {
             fixed_point_t c_tmp = C.get(r, c);
             fixed_point_t cc_tmp = CC.get(r, c);
             fixed_point_t error = c_tmp - cc_tmp;
             fixed_point_t limit = float2fixp(0.001);
-            if(error.n > limit.n) {
+            if(error.n > limit.n) {            // decomposed matrix is more precise
                 printf("FAIL - ");
-            
                 printf("[%d, %d] %f\t %f\n", r, c, fixp2float(c_tmp), fixp2float(cc_tmp));
             }
         }
