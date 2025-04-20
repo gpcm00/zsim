@@ -1,4 +1,5 @@
-#Project Overview
+Project Overview
+====
 
 This is an implementation of the [Coup](https://people.csail.mit.edu/sanchez/papers/2015.coup.micro.pdf) cache coherence protocol 
 
