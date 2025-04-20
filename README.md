@@ -1,8 +1,10 @@
 Project Overview
 ====
 
-This is an implementation of the [Coup](https://people.csail.mit.edu/sanchez/papers/2015.coup.micro.pdf) cache coherence protocol 
+This is an implementation of the [Coup](https://people.csail.mit.edu/sanchez/papers/2015.coup.micro.pdf) cache coherence protocol using ZSim for matrix accelerators using systolic arrays
 
+
+Original
 ====
 
 Below is the readme for Zsim itself. The configuration files we used for zsim were `het_copy.cfg`
